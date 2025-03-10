@@ -1,0 +1,110 @@
+function Decoder(request) {
+    /*
+    This decoder expects JSON data in the format given below.
+    Upon receiving the data, it decodes it and forwards it to the database.
+
+    - To simulate, simply copy the following JSON and paste into the "Body" text field below.
+    - Click on "Try Decoder" to see the result.
+
+    {
+       "device":"REPLACE WITH SERIAL NUMBER",
+       "temperature":23.34,
+       "battery":3.02,
+       "humidity":56,
+       "co2":506,
+       "location":"(53.4562,6.99349)",
+       "power":true,
+       "energy":39495,
+       "solar":true,
+       "state":"System OK",
+       "counter":9349
+    }
+    */
+
+    // First, parse the request body into a JSON object to process it
+    var payload = JSON.parse(request.body)
+
+    // Extract the serial number from the incoming data
+    var serialNumber = payload.device
+
+    /*
+    The following is a demonstration of how to read previously recorded measurement data.
+    This code is encapsulated in a try-catch block to handle the scenario where the field may not yet exist.
+    */
+
+    try {
+        // To access measurement data from the database, we convert the custom serial to the Datacake Device UUID
+        var datacakeUUID = deviceSerialToId[serialNumber]
+
+        // To read the last measurement from a field, we address the device using the Datacake Device UUID
+        // We then read the field by accessing it via FIELD_IDENTIFIER
+        var temperatureInDatabase = measurements[datacakeUUID]["TEMPERATURE"].value
+
+        // HINT: Use .timestamp to fetch the time of the last recorded measurement
+
+        // Now we can perform some checks comparing the new vs. old temperature value
+        var temperatureInPayload = payload["temperature"]
+
+        if (temperatureInPayload > temperatureInDatabase) {
+            payload["temperature_higher"] = true
+        }
+
+    } catch (e) {
+        console.log(JSON.stringify(e))
+        console.log("Error reading measurement from the device. Does the field exist?")
+    }
+
+    // Working with Configuration Fields
+
+    try {
+
+        // If your API Product (+Device) has Configuration Fields, here's how you can use them in a decoder.
+
+        // To access a configuration value from the database, we convert the custom serial to the Datacake Device UUID
+        var datacakeUUID = deviceSerialToId[serialNumber]
+
+        // Read out Configuration Value from Database
+        // Will hold either product default or device value, if overwritten on device level
+        var temperatureLimit = configurationValues[datacakeUUID]["TEMPERATURE_LIMIT"]
+
+        // We can then check if the temperature has exceeded the limit
+        if (payload["temperature"] > temperatureLimit) {
+            payload["temperature_limit_reached"] = true
+        }
+
+    } catch (e) {
+        console.log(JSON.stringify(e))
+        console.log("Error parsing Configuration Field")
+    }
+
+    // Preparing to return data to Datacake...
+
+    // Get the Unix timestamp in seconds to use as the ingestion timestamp
+    var timestamp = Math.floor(Date.now() / 1000);
+
+    var result = Object.keys(payload).map(function(key) {
+      if (key !== "device") {
+        return {
+          device: payload.device,
+          field: key.toUpperCase(),
+          value: payload[key],
+          timestamp: timestamp // timestamps are optional but can be useful for data tracking and auditing
+        };
+      }
+    });
+
+    return result
+
+    /*
+    Sample return format:
+    If you wish to manually return a fixed structure, Datacake API devices require the following format:
+
+    return [
+        {
+            device: "serialnumber", // Replace with Serial Number or Device ID
+            field: "TEST",
+            value: 123
+        }
+    ];
+    */
+}
