@@ -1,0 +1,53 @@
+function Decoder(bytes, port) {
+
+    function readUInt16BE(bytes) {
+        return (bytes[0] << 8) + bytes[1];
+    }
+
+    function readFloat32BE(bytes) {
+        var bits = (bytes[0] << 24) | (bytes[1] << 16) | (bytes[2] << 8) | bytes[3];
+        var sign = (bits & 0x80000000) ? -1 : 1;
+        var exponent = ((bits >> 23) & 0xFF) - 127;
+        var mantissa = (bits & 0x7FFFFF) | 0x800000;
+        var result = sign * mantissa * Math.pow(2, exponent - 23);
+        return isFinite(result) ? (result === 5.877471754111438e-39 ? 0 : result) : 0; // Falls 5.87e-39 -> 0
+    }
+
+    var decoded = {};
+
+    try {
+        decoded.serialNumber = (bytes[0] << 24) | (bytes[1] << 16) | (bytes[2] << 8) | bytes[3];
+        decoded.fragmentNumber = bytes[4] || 0;
+        decoded.parameterBytes = bytes[5] || 0;
+
+        decoded.totalKWh = readFloat32BE(bytes.slice(6, 10));
+        decoded.export_kWh = readFloat32BE(bytes.slice(18, 22)); // Falls diese Position falsch ist, bitte anpassen!
+        decoded.voltage = readFloat32BE(bytes.slice(10, 14));
+        decoded.current = readFloat32BE(bytes.slice(14, 18));
+        decoded.powerFactor = readFloat32BE(bytes.slice(18, 22));
+        decoded.frequency = readFloat32BE(bytes.slice(22, 26));
+        decoded.modbusChecksum = readUInt16BE(bytes.slice(26, 28));
+
+        // LoRaWAN-Daten hinzufügen (Datacake-sicher!)
+        decoded.lora_rssi = 0;
+        decoded.lora_snr = 0;
+        decoded.lora_datarate = "Unknown";
+
+        try {
+            if (typeof normalizedPayload !== "undefined" && normalizedPayload.gateways && normalizedPayload.gateways.length > 0) {
+                decoded.lora_rssi = normalizedPayload.gateways[0].rssi || 0;
+                decoded.lora_snr = normalizedPayload.gateways[0].snr || 0;
+            }
+            if (typeof normalizedPayload !== "undefined" && normalizedPayload.data_rate) {
+                decoded.lora_datarate = normalizedPayload.data_rate;
+            }
+        } catch (e) {
+            decoded.lora_error = "LoRaWAN-Daten nicht gefunden";
+        }
+
+    } catch (error) {
+        decoded.error = "Decoder Fehler: " + error.message;
+    }
+
+    return decoded;
+}
