@@ -1,0 +1,380 @@
+function Decoder(payload, port) {
+    
+    var input = payload
+    var hexFormat = decToHex(input)
+
+    var octetTypeProduit = parseInt(hexFormat.substring(0,2),16);
+    var octetTypeMessage = parseInt(hexFormat.substring(2,4),16);
+    
+    return dataOutput(octetTypeMessage)
+
+        function decToHex(payload)
+        {
+            var buffer=""
+            var output=""
+            for(var i=0;i<payload.length;i++)
+            {
+                buffer=payload[i].toString(16)
+                if(buffer.length <2)
+                {
+                    buffer='0'+buffer
+                }
+                output=output+buffer
+            }
+            return output
+        }
+                
+        function dataOutput(octetTypeMessage)
+        {
+            outputTypeMessage=[productStatusDataOutput(hexFormat),productConfigurationDataOutput(hexFormat),smokeAlarmDataOutput(hexFormat),dailyAirDataOutput(hexFormat),realTimeDataOutput(hexFormat),temperatureDatalogDataOutput(hexFormat)]
+            return outputTypeMessage[octetTypeMessage]
+        }
+
+        function typeOfProduct(octetTypeProduit)
+        {
+            if(octetTypeProduit==0xB1){return "Origin+ LoRa"}
+            if(octetTypeProduit==0xB2){return "Origin LoRa"}
+            if(octetTypeProduit==0xB3){return "Guard+ LoRa"}
+            if(octetTypeProduit==0xB4){return "Guard LoRa"}
+        }    
+        
+        function typeOfMessage(octetTypeMessage)
+        {
+            var message_name =["Produktstatus","Produktkonfiguration","Rauchalarm","Luftqualität" ,"Echtzeit","Temperaturaufzeichnung"]
+            return message_name[octetTypeMessage]
+        }
+
+        ///////////////////////////////////////////////
+        // Product Status Data Message Function
+        ///////////////////////////////////////////////
+    
+
+        function smokeStatus(octetSmokeStatus)
+        {
+            if(octetSmokeStatus===0){return "ok"};
+            if(octetSmokeStatus===1){return "fehlerhaft"};
+        }
+
+        function temperatureStatus(octetTemperatureStatus)
+        {
+            if(octetTemperatureStatus===0){return "ok"};
+            if(octetTemperatureStatus===1){return "fehlerhaft"};
+        }
+
+        function smokeActivation(octetSmokeActivation)
+        {
+            if(octetSmokeActivation===0){return "Rauchsensor deaktiviert"};
+            if(octetSmokeActivation===1){return "Rauchsensor aktiviert"};
+        }
+
+        function magnetBaseDetection(octetMagnetBaseDetection)
+        {
+            if(octetMagnetBaseDetection===0){return "entfernt"};
+            if(octetMagnetBaseDetection===1){return "installiert"};
+            if(octetMagnetBaseDetection===2){return "gerade entfernt"};
+            if(octetMagnetBaseDetection===3){return "gerade installiert"};
+            if(octetMagnetBaseDetection===4){return "Smart Base noch nie erkannt"};
+        }
+
+        function batteryLevel(octetBatteryLevel)
+        {
+            if(octetBatteryLevel===0){return "Hoch"};
+            if(octetBatteryLevel===1){return "Mittel"};
+            if(octetBatteryLevel===2){return "Niedrig"};
+            if(octetBatteryLevel===3){return "Kritisch"};
+        }
+        
+        function batteryVoltage(octetBatteryVoltage)
+        {
+            return (octetBatteryVoltage*5)+2000
+        }
+
+        function productLifetime(octetProductLifetime)
+        {
+          return octetProductLifetime;
+        }
+
+        /////////////////////////////////////////////////////
+        //Product Configuration Message Function
+        ////////////////////////////////////////////////////
+
+        function period(octetPeriod)
+        {
+            return octetPeriod*10;
+        }
+
+        function loraRegion(octetLoRaRegion)
+        {
+            var message_name =["EU868","Reserviert","Reserviert","Reserviert","Reserviert","Reserviert","Reserviert"]
+            return message_name[octetLoRaRegion]
+        }
+
+        function pendingJoin(octetPending)
+        {
+            if(octetPending===0){return "Keine Verbindungsanfrage"}
+            else if(octetPending===1){return "Geplante Verbindungsanfrage"};
+        }
+
+        function nfcStatus(octetNfcStatus)
+        {
+            if(octetNfcStatus===0){return "Aktiv"}
+            else if(octetNfcStatus===1){return "Nicht aktiv"};
+        }
+
+        function Active(octetActive)
+        {
+            if(octetActive===1){return "Aktiv"}
+            else if(octetActive===0){return "Deaktiviert"};
+        }
+
+        function reconfigurationSource(octetReconfigurationSource)
+        {
+            var message_name =["NFC","Downlink","Produktstart","Reserviert","Reserviert","Lokal"]
+            return message_name[octetReconfigurationSource]
+        }
+
+        function reconfigurationState(octetReconfigurationState)
+        {
+            var message_name =["Erfolgreich","Teilweise erfolgreich","Fehlgeschlagen","Reserviert"]
+            return message_name[octetReconfigurationState]
+        }
+
+        function pendingJoin(octetPending)
+        {
+            if(octetPending===0){return "Keine Verbindungsanfrage geplant"};
+            if(octetPending===1){return "Verbindungsanfrage geplant"};
+        }
+
+        //////////////////////////////////////////////////////////////////////
+        ////// Smoke Alarm Message Function
+        /////////////////////////////////////////////////////////////////////
+
+        function alarmStatus(octetAlarmStatus)
+        {
+            if(octetAlarmStatus===0){return "Sicher"};
+            if(octetAlarmStatus===1){return "Lokaler Alarm"};
+            if(octetAlarmStatus===2){return "Entfernter Alarm"};
+        }
+
+        function alarmHush(octetAlarmHush)
+        {
+            if(octetAlarmHush===0){return "Rauchalarm gestoppt, da kein Rauch mehr vorhanden"};
+            if(octetAlarmHush===1){return "Rauchalarm durch zentrale Tastenbetätigung gestoppt"};
+            if(octetAlarmHush===2){return "Rauchalarm durch Fernabschaltung gestoppt"};
+        }
+
+        function smokeTest(octetSmokeTest)
+        {
+            if(octetSmokeTest===0){return "-"};
+            if(octetSmokeTest===1){return "Lokaler Test durchgeführt"};
+            if(octetSmokeTest===2){return "Entfernter Test durchgeführt"};
+        }
+
+        function maintenance(octetMaintenance)
+        {
+            if(octetMaintenance===0){return "Wartung nicht durchgeführt"};
+            if(octetMaintenance===1){return "Wartung wurde durchgeführt"};
+        }
+
+        function periodWeek(octetWeek)
+        {
+            return octetWeek
+        }
+
+        ///////////////////////////////////////////////////////////////////////
+        /////// Real Time Message Function
+        ///////////////////////////////////////////////////////////////////////
+        
+        function temperature(octetTemperature)
+        {
+            if(octetTemperature == 1023){return "Fehler"}
+            if(octetTemperature == 1022){return "Sensor getrennt"}
+            else{ return ((octetTemperature*0.1)-30)}
+        }
+
+        function humidity(octetHumidity)
+        {
+            if(octetHumidity == 255){return "Fehler"}
+            else{ return (octetHumidity*0.5)}
+        }
+
+        ////////////////////////////////////////////////////////////////////
+        /////// HexToBinary
+        ///////////////////////////////////////////////////////////////////
+        function hexToBinary(encoded) {
+            var string_bin = "";
+            var string_bin_elements = "";
+            var i;
+            var j;
+    
+            for (i = 0; i < encoded.length; i++) {
+                string_bin_elements = encoded.charAt(i);
+                string_bin_elements = parseInt(string_bin_elements, 16).toString(2);
+                if (string_bin_elements.length < 4) {
+                    var nb_zeros = 4 - string_bin_elements.length;
+                    for (j = 0; j < nb_zeros; j++) {
+                        string_bin_elements = "0" + string_bin_elements;
+                    }
+                }
+                string_bin = string_bin + string_bin_elements;
+            }
+            return string_bin;
+        }
+        
+        //////////////////////////////////////////////////////////////////////
+        ////// Product message decoding
+        ////////////////////////////////////////////////////////////////////
+
+        function productStatusDataOutput(hexFormat)
+        {
+            var data_hw_version = (parseInt(hexFormat.substring(4,6),16)) & 0xFF;
+            var data_sw_version = (parseInt(hexFormat.substring(6,8),16)) & 0xFF;
+            var data_product_lifetime = (parseInt(hexFormat.substring(8,10),16)) & 0xFF;
+            var data_smoke_sensor= (parseInt(hexFormat.substring(10,11),16)>>3) & 0x01;
+            var data_temp_hum_sensor= (parseInt(hexFormat.substring(10,11),16)>>2) & 0x01;
+            var data_smoke_sensor_activation = (parseInt(hexFormat.substring(10,11),16)>>1) & 0x01;
+            var data_magnetic_base_detection = (parseInt(hexFormat.substring(10,12),16)>>2) & 0x07;
+            var data_energy_status= (parseInt(hexFormat.substring(11,12),16)) & 0x03;
+            var data_battery_voltage =(parseInt(hexFormat.substring(12,14),16)) & 0xFF;
+
+            data = {
+            "hwVersion":data_hw_version,
+            "swVersion":data_sw_version*0.1,
+            "rmgLifetime":productLifetime(data_product_lifetime),
+            "smokeSensorStatus": smokeStatus(data_smoke_sensor),
+            "tempHumSensorStatus": temperatureStatus(data_temp_hum_sensor),
+            "antiTearDetectionStatus": magnetBaseDetection(data_magnetic_base_detection),
+            "batteryLevel":batteryLevel(data_energy_status),
+            "batteryVoltage": batteryVoltage(data_battery_voltage) * 0.001
+            }
+
+            return data;
+        }
+
+        function productConfigurationDataOutput(hexFormat)
+        {
+            var data_reconfiguration_source = (parseInt(hexFormat.substring(4,5),16)>>1)&0x07;
+            var data_reconfiguration_status = (parseInt(hexFormat.substring(4,6),16)>>3)&0x03;
+            var data_datalog_enable= (parseInt(hexFormat.substring(5,6),16)>>2)&0x01;
+            var data_daily_air_enable= (parseInt(hexFormat.substring(5,6),16)>>1)&0x01;
+            var data_magnet_removal_enable= (parseInt(hexFormat.substring(5,6),16))&0x01;
+            var data_pending_join = (parseInt(hexFormat.substring(6,7),16)>>3)&0x01;
+            var data_nfc_status = (parseInt(hexFormat.substring(6,7),16)>>1)&0x03;
+            var data_lora_region = (parseInt(hexFormat.substring(6,8),16)>>1)&0x0F;
+            var data_nb_new_data = (parseInt(hexFormat.substring(7,10),16)>>3)&0x3F; 
+            var data_nb_of_redudancy =(parseInt(hexFormat.substring(9,11),16)>>2)&0x1F;
+            var data_transmission_period = (parseInt(hexFormat.substring(10,13),16)>>2)&0xFF;
+            var data_interconnection_id = (parseInt(hexFormat.substring(12,17),16)>>1)&0x1FFFF; //manque info sur la doc
+
+            data = {
+            "datalogEnable":Active(data_datalog_enable),
+            "datalogNewMeasure":data_nb_new_data,
+            "datalogMeasureRepetition":data_nb_of_redudancy,
+            "transmissionIntervalDatalog":period(data_transmission_period),
+            "d2dNetworkID":data_interconnection_id
+            }
+            return data;
+        }
+
+        function smokeAlarmDataOutput(hexFormat)
+        {
+            var data_smoke_alarm = (parseInt(hexFormat.substring(4,5),16) >> 2)&0x03;
+            var data_smoke_hush = (parseInt(hexFormat.substring(4,5),16))&0x03;
+            var data_smoke_test = (parseInt(hexFormat.substring(5,6),16)>>2)&0x03;
+            var data_time_since_last_smoke_test = (parseInt(hexFormat.substring(5,8),16)>>2)&0xFF;
+            var data_maintenance = (parseInt(hexFormat.substring(7,8),16)>>1)&0x01;
+            var data_time_since_last_maintenance = (parseInt(hexFormat.substring(7,10),16)>>1)&0xFF;
+            var data_temperature = (parseInt(hexFormat.substring(9,13),16)>>3)&0x3FF;
+            
+            data = {
+            "smokeAlarm": alarmStatus(data_smoke_alarm),
+            "smokeLocalProductTest": smokeTest(data_smoke_test),
+            "timeSinceLastMaintenance":periodWeek(data_time_since_last_maintenance),
+            "temperature":temperature(data_temperature)
+            };
+            return data;
+        }
+
+        function dailyAirDataOutput(hexFormat)
+        {
+            var data_temp_mini = (parseInt(hexFormat.substring(4,7),16)>>2)&0x3FF;
+            var data_temp_max = (parseInt(hexFormat.substring(6,9),16))&0x3FF;
+            var data_temp_avg = (parseInt(hexFormat.substring(9,12),16)>>2)&0x3FF;
+            var data_hum_min = (parseInt(hexFormat.substring(11,14),16)>>2)&0xFF;
+            var data_hum_max = (parseInt(hexFormat.substring(13,16),16)>>2)&0xFF;
+            var data_hum_avg = (parseInt(hexFormat.substring(15,18),16)>>2)&0xFF;
+
+            data = {
+            "temperatureMin":temperature(data_temp_mini),
+            "temperatureMax":temperature(data_temp_max),
+            "temperatureAvg":temperature(data_temp_avg),
+            "humidityMin":humidity(data_hum_min),
+            "humidityMax":humidity(data_hum_max),
+            "humidityAvg":humidity(data_hum_avg)
+            }
+            return data;
+        }
+
+        function realTimeDataOutput(hexFormat)
+        {
+            var data_temp = (parseInt(hexFormat.substring(4,7),16)>>2)&0x3FF;
+            var data_hum = (parseInt(hexFormat.substring(6,9),16)>>2)&0xFF;
+
+            data = {
+            "temperature":temperature(data_temp),
+            "humidity":humidity(data_hum),
+            }
+
+            return data;
+        }
+
+        function temperatureDatalogDataOutput(hexFormat)
+        {
+            var mesure = [];
+            var mesure_array=[]
+            
+            var i = 0;
+            var offset_octet = 0;
+
+            var data_nombre_mesures = (parseInt(hexFormat.substring(4,6),16)>>2)&0x3F;
+            var data_time_between_measurement_min = ((parseInt(hexFormat.substring(5,8),16)>>2)&0xFF);
+            var data_repetition = (parseInt(hexFormat.substring(7,9),16))&0x3F;
+            var binary=hexToBinary(hexFormat)
+
+            for(i=0;i<data_nombre_mesures;i++){
+
+                offset_binaire = 36 + (10*i);
+
+                mesure[i]= parseInt(binary.substring(offset_binaire,offset_binaire+10),2);  
+
+                if(mesure[i] === 0x3FF){mesure[i] = 0;}
+                else{
+                    
+                    mesure[i] = parseFloat(((mesure[i]/10)-30).toFixed(1))
+                    
+                }
+
+            }
+            /*
+            data={ "typeOfProduct": typeOfProduct(octetTypeProduit),
+            "typeOfMessage": typeOfMessage(octetTypeMessage),
+            "datalogNewMeasure": data_nombre_mesures,
+            "transmissionIntervalDatalog":data_time_between_measurement_sec,
+            "datalogMeasureRepetition":data_repetition,
+            "temperature":mesure,
+            } 
+            */
+            for(i=0;i<mesure.length;i++)
+            {
+            mesure_array[i]={
+                timestamp:Math.round((Date.now() - (data_time_between_measurement_min*60*1000*i))/1000),
+                value:mesure[i],
+                field:"temperature_" + i
+              }
+            }
+
+            return mesure_array;
+        }
+
+
+}
